@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, getErrorMessage } from "@/lib/api-client";
+import { getCurrentUser } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,23 +28,39 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await apiClient.post("/auth/login", data);
-      toast.success("Logged in successfully");
-      router.push("/dashboard/customer"); // we'll make this role-aware later
+
+      const user = await getCurrentUser();
+      console.log("user returned:", user);
+
+      if (!user) {
+        toast.error("Login succeeded but could not fetch user. Please try again.");
+        return;
+      }
+
+      toast.success(`Welcome back, ${user.name}!`);
+
+      if (user.role === "ADMIN") {
+        router.push("/auth/dashboard/admin");
+      } else if (user.role === "TECHNICIAN") {
+        router.push("/auth/dashboard/technician");
+      } else {
+        router.push("/auth/dashboard/customer");
+      }
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      const message = err?.response?.data?.message || "Login failed. Please try again.";
-      toast.error(message);
+      toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Login to FixItNow</CardTitle>
+    <div className="flex min-h-screen items-center justify-center px-4 bg-gray-50">
+      <Card className="w-full max-w-sm shadow-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Welcome Back</CardTitle>
+          <CardDescription>Login to your FixItNow account</CardDescription>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <Controller
@@ -57,8 +75,11 @@ export default function LoginPage() {
                     type="email"
                     placeholder="you@example.com"
                     aria-invalid={fieldState.invalid}
+                    disabled={isLoading}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -73,18 +94,36 @@ export default function LoginPage() {
                     {...field}
                     id={field.name}
                     type="password"
+                    placeholder="••••••••"
                     aria-invalid={fieldState.invalid}
+                    disabled={isLoading}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
               {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
         </CardContent>
+
+        <CardFooter className="justify-center text-sm text-gray-500">
+          Dont have an account?;
+          <Link
+            href="/auth/register"
+            className="text-blue-600 hover:underline font-medium"
+          >
+            Register
+          </Link>
+        </CardFooter>
       </Card>
     </div>
   );
