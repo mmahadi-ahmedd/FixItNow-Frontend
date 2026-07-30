@@ -66,7 +66,19 @@ export default function TechnicianProfilePage() {
     loadData();
   }, [id]);
 
-
+ const handleBookNow = async () => {
+    const user = await getCurrentUser();
+    if (!user) {
+      toast.error("Please login to book a service");
+      router.push("/auth/login");
+      return;
+    }
+    if (user.role !== "CUSTOMER") {
+      toast.error("Only customers can book services");
+      return;
+    }
+    setShowBookingForm(true);
+  };
 
   if (isLoading) {
     return (
