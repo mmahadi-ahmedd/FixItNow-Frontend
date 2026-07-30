@@ -3,6 +3,7 @@ import { Roboto } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import Providers from "./providers";
+import Navbar from "@/components/Navbar";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en" className={`${roboto.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">
         <Providers>
+          <Navbar />
           {children}
         </Providers>
         <Toaster />
