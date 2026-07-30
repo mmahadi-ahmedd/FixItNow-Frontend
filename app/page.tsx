@@ -75,7 +75,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      
+      <footer className="bg-gray-900 text-gray-400 py-8 px-4 text-center text-sm">
+        <p>© 2026 FixItNow. All rights reserved.</p>
+        <div className="flex gap-4 justify-center mt-2">
+          <Link href="/services" className="hover:text-white">
+            Services
+          </Link>
+          <Link href="/auth/login" className="hover:text-white">
+            Login
+          </Link>
+          <Link href="/auth/register" className="hover:text-white">
+            Register
+          </Link>
+        </div>
+      </footer>
     </main>
   );
 }
