@@ -66,7 +66,7 @@ export default function TechnicianProfilePage() {
     loadData();
   }, [id]);
 
- const handleBookNow = async () => {
+  const handleBookNow = async () => {
     const user = await getCurrentUser();
     if (!user) {
       toast.error("Please login to book a service");
@@ -79,6 +79,7 @@ export default function TechnicianProfilePage() {
     }
     setShowBookingForm(true);
   };
+
   const handleSubmitBooking = async () => {
     if (!selectedService) {
       toast.error("Please select a service");
@@ -136,6 +137,7 @@ export default function TechnicianProfilePage() {
         ← Back
       </Button>
 
+      {/* Profile Header */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex justify-between items-start flex-wrap gap-4">
@@ -164,6 +166,7 @@ export default function TechnicianProfilePage() {
         </CardContent>
       </Card>
 
+      {/* Booking Form */}
       {showBookingForm && (
         <Card>
           <CardHeader>
@@ -247,6 +250,7 @@ export default function TechnicianProfilePage() {
         </Card>
       )}
 
+      {/* Services */}
       <div>
         <h2 className="text-xl font-semibold mb-3">Services Offered</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -271,6 +275,7 @@ export default function TechnicianProfilePage() {
         </div>
       </div>
 
+      {/* Availability */}
       {technician.availability.length > 0 && (
         <div>
           <h2 className="text-xl font-semibold mb-3">Availability</h2>
@@ -294,6 +299,7 @@ export default function TechnicianProfilePage() {
         </div>
       )}
 
+      {/* Reviews */}
       <div>
         <h2 className="text-xl font-semibold mb-3">
           Reviews ({technician.reviews.length})
