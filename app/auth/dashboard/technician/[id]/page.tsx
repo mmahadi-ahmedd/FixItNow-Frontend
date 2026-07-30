@@ -79,6 +79,36 @@ export default function TechnicianProfilePage() {
     }
     setShowBookingForm(true);
   };
+  const handleSubmitBooking = async () => {
+    if (!selectedService) {
+      toast.error("Please select a service");
+      return;
+    }
+    if (!scheduledAt) {
+      toast.error("Please select a date and time");
+      return;
+    }
+    if (!address) {
+      toast.error("Please enter your address");
+      return;
+    }
+
+    setIsBooking(true);
+    try {
+      await apiClient.post("/bookings", {
+        serviceId: selectedService,
+        scheduledAt: new Date(scheduledAt).toISOString(),
+        address,
+        notes,
+      });
+      toast.success("Booking created successfully!");
+      router.push("/auth/dashboard/customer");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsBooking(false);
+    }
+  };
 
   if (isLoading) {
     return (
