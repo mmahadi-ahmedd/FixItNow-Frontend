@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient, getErrorMessage } from "@/lib/api-client";
 import { getCurrentUser } from "@/lib/auth";
+import { logout } from "@/lib/auth";
 
 interface Booking {
   id: number;
@@ -91,10 +92,7 @@ export default function TechnicianDashboard() {
         </div>
         <Button
           variant="outline"
-          onClick={() => {
-            localStorage.removeItem("accessToken");
-            router.push("/auth/login");
-          }}
+           onClick={logout}
         >
           Logout
         </Button>

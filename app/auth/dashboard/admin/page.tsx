@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient, getErrorMessage } from "@/lib/api-client";
 import { getCurrentUser } from "@/lib/auth";
+import { logout } from "@/lib/auth";
 
 interface User {
   id: number;
@@ -96,10 +97,7 @@ export default function AdminDashboard() {
         </div>
         <Button
           variant="outline"
-          onClick={() => {
-            localStorage.removeItem("accessToken");
-            router.push("/auth/login");
-          }}
+           onClick={logout}
         >
           Logout
         </Button>
@@ -133,11 +131,10 @@ export default function AdminDashboard() {
                       {user.role}
                     </span>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded ${
-                        user.status === "ACTIVE"
+                      className={`text-xs px-2 py-0.5 rounded ${user.status === "ACTIVE"
                           ? "bg-green-100 text-green-800"
                           : "bg-red-100 text-red-800"
-                      }`}
+                        }`}
                     >
                       {user.status}
                     </span>
@@ -180,8 +177,7 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <span
-                    className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      {
+                    className={`text-xs font-medium px-2 py-1 rounded-full ${{
                         REQUESTED: "bg-yellow-100 text-yellow-800",
                         ACCEPTED: "bg-blue-100 text-blue-800",
                         DECLINED: "bg-red-100 text-red-800",
@@ -190,7 +186,7 @@ export default function AdminDashboard() {
                         COMPLETED: "bg-gray-100 text-gray-800",
                         CANCELLED: "bg-red-200 text-red-900",
                       }[booking.status] || "bg-gray-100 text-gray-800"
-                    }`}
+                      }`}
                   >
                     {booking.status}
                   </span>

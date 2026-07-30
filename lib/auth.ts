@@ -14,4 +14,13 @@ export const getCurrentUser = async (): Promise<CurrentUser | null> => {
   } catch {
     return null;
   }
+
+  
+};
+
+export const logout = () => {
+  localStorage.removeItem("accessToken");
+  // Clear the cookie set by the interceptor
+  document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  window.location.href = "/auth/login";
 };
