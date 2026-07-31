@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 export default function Navbar() {
     const router = useRouter();
     const pathname = usePathname();
+    const hideNavbar = ["/auth/login", "/auth/register"].includes(pathname);
 
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [role, setRole] = useState<string | null>(null);
@@ -24,6 +25,7 @@ export default function Navbar() {
         };
         checkAuth();
     }, [pathname]);
+    if (hideNavbar) return null;
     return (
         <nav className="bg-white border-b px-4 py-3 sticky top-0 z-50">
             <div className="max-w-5xl mx-auto flex justify-between items-center">

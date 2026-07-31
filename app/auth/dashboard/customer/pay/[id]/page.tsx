@@ -13,28 +13,24 @@ export default function PayPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePay = async () => {
-    setIsLoading(true);
-    try {
-      const res = await apiClient.post("/payments/create", {
-        bookingId: Number(id),
-      });
+  setIsLoading(true);
+  try {
+    await apiClient.post("/payments/create", {
+      bookingId: Number(id),
+    });
 
-      const { paymentIntentId, clientSecret, amount } = res.data.data;
+    await apiClient.post("/payments/test-confirm", {
+      bookingId: Number(id),
+    });
 
-      const confirmRes = await apiClient.post("/payments/confirm", {
-        bookingId: Number(id),
-      });
-
-      if (confirmRes.data.success) {
-        toast.success("Payment successful! Booking is now PAID.");
-        router.push("/auth/dashboard/customer");
-      }
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    toast.success("Payment successful! Booking is now PAID.");
+    router.push("/auth/dashboard/customer");
+  } catch (error) {
+    toast.error(getErrorMessage(error));
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
