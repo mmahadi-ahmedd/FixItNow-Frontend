@@ -68,6 +68,16 @@ export default function TechnicianDashboard() {
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
   const [isSavingAvailability, setIsSavingAvailability] = useState(false);
 
+
+  const [profileForm, setProfileForm] = useState({
+    bio: "",
+    experienceYears: "",
+    hourlyRate: "",
+    location: "",
+  });
+  const [showProfileForm, setShowProfileForm] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   useEffect(() => {
     const loadData = async () => {
       const user = await getCurrentUser();
@@ -102,6 +112,20 @@ export default function TechnicianDashboard() {
 
       if (profileRes.data.data?.availability) {
         setAvailability(profileRes.data.data.availability);
+      }
+
+
+      const profileData = profileRes.data.data;
+      if (profileData) {
+        setProfileForm({
+          bio: profileData.bio || "",
+          experienceYears: String(profileData.experienceYears || ""),
+          hourlyRate: String(profileData.hourlyRate || ""),
+          location: profileData.location || "",
+        });
+        if (profileData.availability) {
+          setAvailability(profileData.availability);
+        }
       }
 
 
@@ -220,6 +244,29 @@ export default function TechnicianDashboard() {
     }
   };
 
+
+  const saveProfile = async (): Promise<void> => {
+    if (!profileForm.location) {
+      toast.error("Location is required");
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      await apiClient.put("/technician/profile", {
+        bio: profileForm.bio,
+        experienceYears: Number(profileForm.experienceYears),
+        hourlyRate: Number(profileForm.hourlyRate),
+        location: profileForm.location,
+      });
+      toast.success("Profile updated successfully!");
+      setShowProfileForm(false);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   return (
 
 
@@ -231,6 +278,116 @@ export default function TechnicianDashboard() {
             <h1 className="text-2xl font-bold">Welcome, {userName}</h1>
             <p className="text-gray-500">Manage your incoming bookings</p>
           </div>
+        </div>
+        {/* Profile Section */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">My Profile</h2>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowProfileForm(!showProfileForm)}
+            >
+              {showProfileForm ? "Cancel" : "Edit Profile"}
+            </Button>
+          </div>
+
+          {/* Profile Summary — always visible */}
+          {!showProfileForm && (
+            <Card>
+              <CardContent className="pt-4 space-y-2 text-sm text-gray-600">
+                {profileForm.bio && <p>📝 {profileForm.bio}</p>}
+                {profileForm.location && <p>📍 {profileForm.location}</p>}
+                {profileForm.experienceYears && (
+                  <p>🛠 {profileForm.experienceYears} years experience</p>
+                )}
+                {profileForm.hourlyRate && (
+                  <p>💰 ${profileForm.hourlyRate}/hr</p>
+                )}
+                {!profileForm.bio && !profileForm.location && (
+                  <p className="text-gray-400">
+                    No profile set up yet. Click `Edit Profile` to get started.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Edit Form */}
+          {showProfileForm && (
+            <Card>
+              <CardContent className="pt-4 space-y-3">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Bio</label>
+                  <textarea
+                    value={profileForm.bio}
+                    onChange={(e) =>
+                      setProfileForm({ ...profileForm, bio: e.target.value })
+                    }
+                    placeholder="Tell customers about your experience and expertise..."
+                    rows={3}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Location</label>
+                  <input
+                    type="text"
+                    value={profileForm.location}
+                    onChange={(e) =>
+                      setProfileForm({ ...profileForm, location: e.target.value })
+                    }
+                    placeholder="Dhaka, Bangladesh"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Years of Experience
+                  </label>
+                  <input
+                    type="number"
+                    value={profileForm.experienceYears}
+                    onChange={(e) =>
+                      setProfileForm({
+                        ...profileForm,
+                        experienceYears: e.target.value,
+                      })
+                    }
+                    placeholder="5"
+                    min="0"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Hourly Rate ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={profileForm.hourlyRate}
+                    onChange={(e) =>
+                      setProfileForm({ ...profileForm, hourlyRate: e.target.value })
+                    }
+                    placeholder="25"
+                    min="0"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <Button
+                  className="w-full"
+                  onClick={saveProfile}
+                  disabled={isSavingProfile}
+                >
+                  {isSavingProfile ? "Saving..." : "Save Profile"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
         {/* Availability Section */}
         <div className="mb-8">
