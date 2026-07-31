@@ -32,6 +32,12 @@ interface Category {
   name: string;
 }
 
+interface AvailabilitySlot {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
 const statusColors: Record<string, string> = {
   REQUESTED: "bg-yellow-100 text-yellow-800",
   ACCEPTED: "bg-blue-100 text-blue-800",
@@ -58,6 +64,10 @@ export default function TechnicianDashboard() {
   });
   const [isCreatingService, setIsCreatingService] = useState(false);
 
+
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+  const [isSavingAvailability, setIsSavingAvailability] = useState(false);
+
   useEffect(() => {
     const loadData = async () => {
       const user = await getCurrentUser();
@@ -70,14 +80,15 @@ export default function TechnicianDashboard() {
         return;
       }
       setUserName(user.name);
-      const [bookingsRes, servicesRes, categoriesRes] = await Promise.all([
+      const [bookingsRes, servicesRes, categoriesRes, profileRes] = await Promise.all([
         apiClient.get("/technician/bookings"),
         apiClient.get("/services"),
         apiClient.get("/categories"),
+        apiClient.get("/technician/profile"),
       ]);
+
+
       setBookings(bookingsRes.data.data);
-      // Filter services belonging to this technician
-      // Type for services returned by API including nested technician.user.email
       type ServiceWithTechnician = Service & {
         technician: { user: { email: string } };
       };
@@ -88,6 +99,12 @@ export default function TechnicianDashboard() {
         )
       );
       setCategories(categoriesRes.data.data);
+
+      if (profileRes.data.data?.availability) {
+        setAvailability(profileRes.data.data.availability);
+      }
+
+
 
       try {
         const res = await apiClient.get("/technician/bookings");
@@ -101,10 +118,55 @@ export default function TechnicianDashboard() {
     loadData();
   }, [router]);
 
+
+
+  const toggleDay = (dayOfWeek: number): void => {
+    const exists: AvailabilitySlot | undefined = availability.find((s) => s.dayOfWeek === dayOfWeek);
+    if (exists) {
+      setAvailability((prev) => prev.filter((s) => s.dayOfWeek !== dayOfWeek));
+    } else {
+      setAvailability((prev) => [
+        ...prev,
+        { dayOfWeek, startTime: "09:00", endTime: "17:00" },
+      ]);
+    }
+  };
+
+  const updateSlot = (
+    dayOfWeek: number,
+    field: "startTime" | "endTime",
+    value: string
+  ): void => {
+    setAvailability((prev: AvailabilitySlot[]): AvailabilitySlot[] =>
+      prev.map((s: AvailabilitySlot): AvailabilitySlot =>
+        s.dayOfWeek === dayOfWeek ? { ...s, [field]: value } : s
+      )
+    );
+  };
+
+  const saveAvailability = async (): Promise<void> => {
+    if (availability.length === 0) {
+      toast.error("Please select at least one day");
+      return;
+    }
+    setIsSavingAvailability(true);
+    try {
+      await apiClient.put("/technician/availability", { slots: availability });
+      toast.success("Availability saved successfully!");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsSavingAvailability(false);
+    }
+  };
+
+
+
+
   const updateStatus = async (
     bookingId: number,
     status: "ACCEPTED" | "DECLINED" | "IN_PROGRESS" | "COMPLETED"
-  ) => {
+  ): Promise<void> => {
     try {
       await apiClient.patch(`/technician/bookings/${bookingId}`, { status });
       toast.success(`Booking marked as ${status}`);
@@ -123,7 +185,7 @@ export default function TechnicianDashboard() {
       </div>
     );
   }
-  const createService = async () => {
+  const createService = async (): Promise<void> => {
     if (!serviceForm.categoryId || !serviceForm.title ||
       !serviceForm.description || !serviceForm.price) {
       toast.error("Please fill in all fields");
@@ -138,7 +200,7 @@ export default function TechnicianDashboard() {
         price: Number(serviceForm.price),
       });
       toast.success("Service created successfully!");
-      setServices((prev) => [...prev, res.data.data]);
+      setServices((prev: Service[]): Service[] => [...prev, res.data.data]);
       setShowServiceForm(false);
       setServiceForm({ categoryId: "", title: "", description: "", price: "" });
     } catch (error) {
@@ -148,11 +210,11 @@ export default function TechnicianDashboard() {
     }
   };
 
-  const deleteService = async (serviceId: number) => {
+  const deleteService = async (serviceId: number): Promise<void> => {
     try {
       await apiClient.delete(`/services/${serviceId}`);
       toast.success("Service deleted");
-      setServices((prev) => prev.filter((s) => s.id !== serviceId));
+      setServices((prev: Service[]): Service[] => prev.filter((s) => s.id !== serviceId));
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -163,8 +225,115 @@ export default function TechnicianDashboard() {
 
 
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Services Section */}
       <div className="mb-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-2xl font-bold">Welcome, {userName}</h1>
+            <p className="text-gray-500">Manage your incoming bookings</p>
+          </div>
+        </div>
+        {/* Availability Section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">My Availability</h2>
+          <Card>
+            <CardContent className="pt-4">
+              <p className="text-sm text-gray-500 mb-4">
+                Select the days you available and set your working hours.
+              </p>
+
+              <div className="space-y-3">
+                {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(
+                  (day, index) => {
+                    const slot = availability.find((s) => s.dayOfWeek === index);
+                    const isSelected = !!slot;
+
+                    return (
+                      <div
+                        key={day}
+                        className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isSelected
+                          ? "border-green-300 bg-green-50"
+                          : "border-gray-200 bg-gray-50"
+                          }`}
+                      >
+                        {/* Day toggle */}
+                        <button
+                          onClick={() => toggleDay(index)}
+                          className={`w-24 text-sm font-medium py-1 px-2 rounded ${isSelected
+                            ? "bg-green-500 text-white"
+                            : "bg-white border text-gray-600"
+                            }`}
+                        >
+                          {day.slice(0, 3)}
+                        </button>
+
+                        {/* Time pickers — only show if day is selected */}
+                        {isSelected && (
+                          <div className="flex items-center gap-2 flex-1 flex-wrap">
+                            <span className="text-sm text-gray-500">From</span>
+                            <input
+                              type="time"
+                              value={slot.startTime}
+                              onChange={(e) =>
+                                updateSlot(index, "startTime", e.target.value)
+                              }
+                              className="rounded border border-input px-2 py-1 text-sm"
+                            />
+                            <span className="text-sm text-gray-500">To</span>
+                            <input
+                              type="time"
+                              value={slot.endTime}
+                              onChange={(e) =>
+                                updateSlot(index, "endTime", e.target.value)
+                              }
+                              className="rounded border border-input px-2 py-1 text-sm"
+                            />
+                          </div>
+                        )}
+
+                        {!isSelected && (
+                          <span className="text-sm text-gray-400">Not available</span>
+                        )}
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+
+              <Button
+                className="w-full mt-4"
+                onClick={saveAvailability}
+                disabled={isSavingAvailability}
+              >
+                {isSavingAvailability ? "Saving..." : "Save Availability"}
+              </Button>
+              {/* Show saved availability summary */}
+              {availability.length > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Current Availability:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {availability
+                      .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+                      .map((slot) => (
+                        <div
+                          key={slot.dayOfWeek}
+                          className="bg-green-100 border border-green-300 rounded px-3 py-1 text-sm"
+                        >
+                          <span className="font-medium">
+                            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][slot.dayOfWeek]}
+                          </span>
+                          <span className="text-gray-600 ml-1">
+                            {slot.startTime} – {slot.endTime}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">My Services</h2>
           <Button size="sm" onClick={() => setShowServiceForm(!showServiceForm)}>
@@ -172,7 +341,6 @@ export default function TechnicianDashboard() {
           </Button>
         </div>
 
-        {/* Create Service Form */}
         {showServiceForm && (
           <Card className="mb-4">
             <CardContent className="pt-4 space-y-3">
@@ -222,7 +390,6 @@ export default function TechnicianDashboard() {
           </Card>
         )}
 
-        {/* Existing Services */}
         {services.length === 0 ? (
           <Card>
             <CardContent className="py-6 text-center text-gray-500 text-sm">
@@ -260,18 +427,7 @@ export default function TechnicianDashboard() {
           </div>
         )}
       </div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-2xl font-bold">Welcome, {userName}</h1>
-          <p className="text-gray-500">Manage your incoming bookings</p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={logout}
-        >
-          Logout
-        </Button>
-      </div>
+
 
       <h2 className="text-xl font-semibold mb-4">Booking Requests</h2>
 
@@ -358,8 +514,6 @@ export default function TechnicianDashboard() {
         </div>
       )}
     </div>
-
-
 
   );
 }

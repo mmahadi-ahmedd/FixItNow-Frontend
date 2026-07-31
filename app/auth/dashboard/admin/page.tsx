@@ -95,12 +95,12 @@ export default function AdminDashboard() {
             {users.length} users · {bookings.length} bookings
           </p>
         </div>
-        <Button
+        {/* <Button
           variant="outline"
            onClick={logout}
         >
-          Logout
-        </Button>
+          
+        </Button> */}
       </div>
 
       <div className="flex gap-2 mb-6">

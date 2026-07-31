@@ -92,12 +92,6 @@ export default function CustomerDashboard() {
           <h1 className="text-2xl font-bold">Welcome, {userName}</h1>
           <p className="text-gray-500">Manage your bookings and payments</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={logout}
-        >
-          Logout
-        </Button>
       </div>
 
       <h2 className="text-xl font-semibold mb-4">Your Bookings</h2>
