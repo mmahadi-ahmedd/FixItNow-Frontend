@@ -30,11 +30,7 @@ export default function LoginPage() {
       await apiClient.post("/auth/login", data);
 
       const user = await getCurrentUser();
-      // console.log("user returned:", user);
-      const response = await apiClient.post("/auth/login", data);
-      const { accessToken } = response.data.data;
-      localStorage.setItem("accessToken", accessToken);
-      // console.log("login response:", JSON.stringify(response.data, null, 2));
+      
       if (!user) {
         toast.error("Login succeeded but could not fetch user. Please try again.");
         return;

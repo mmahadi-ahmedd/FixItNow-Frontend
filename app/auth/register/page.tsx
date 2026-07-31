@@ -35,13 +35,10 @@ export default function RegisterPage() {
   try {
     await apiClient.post("/auth/register", data);
 
-    const loginResponse = await apiClient.post("/auth/login", {
+    await apiClient.post("/auth/login", {
       email: data.email,
       password: data.password,
     });
-
-    const { accessToken } = loginResponse.data.data;
-    localStorage.setItem("accessToken", accessToken);
 
     const user = await getCurrentUser();
 

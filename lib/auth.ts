@@ -18,9 +18,12 @@ export const getCurrentUser = async (): Promise<CurrentUser | null> => {
   
 };
 
-export const logout = () => {
-  localStorage.removeItem("accessToken");
-  // Clear the cookie set by the interceptor
-  document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-  window.location.href = "/auth/login";
+export const logout = async () => {
+  try {
+    await apiClient.post("/auth/logout");
+  } catch {
+    
+  } finally {
+    window.location.href = "/auth/login";
+  }
 };
