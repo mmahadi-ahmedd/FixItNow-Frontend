@@ -31,7 +31,11 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"users" | "bookings">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "bookings" | "categories">("users");
+  const [categories, setCategories] = useState<{ id: number; name: string; description?: string }[]>([]);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({ name: "", description: "" });
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -46,12 +50,14 @@ export default function AdminDashboard() {
       }
 
       try {
-        const [usersRes, bookingsRes] = await Promise.all([
+        const [usersRes, bookingsRes, categoriesRes] = await Promise.all([
           apiClient.get("/admin/users"),
           apiClient.get("/admin/bookings"),
+          apiClient.get("/admin/categories"),
         ]);
         setUsers(usersRes.data.data);
         setBookings(bookingsRes.data.data);
+        setCategories(categoriesRes.data.data);
       } catch (error) {
         toast.error(getErrorMessage(error));
       } finally {
@@ -78,6 +84,28 @@ export default function AdminDashboard() {
     }
   };
 
+  const createCategory = async () => {
+    if (!categoryForm.name) {
+      toast.error("Category name is required");
+      return;
+    }
+    setIsCreatingCategory(true);
+    try {
+      const res = await apiClient.post("/admin/categories", {
+        name: categoryForm.name,
+        description: categoryForm.description,
+      });
+      toast.success("Category created successfully!");
+      setCategories((prev) => [...prev, res.data.data]);
+      setCategoryForm({ name: "", description: "" });
+      setShowCategoryForm(false);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -92,7 +120,7 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <p className="text-gray-500">
-            {users.length} users · {bookings.length} bookings
+            {users.length} users · {bookings.length} bookings · {categories.length} categories
           </p>
         </div>
         {/* <Button
@@ -116,6 +144,12 @@ export default function AdminDashboard() {
         >
           Bookings
         </Button>
+        <Button
+          variant={activeTab === "categories" ? "default" : "outline"}
+          onClick={() => setActiveTab("categories")}
+        >
+          Categories
+        </Button>
       </div>
 
       {activeTab === "users" && (
@@ -132,8 +166,8 @@ export default function AdminDashboard() {
                     </span>
                     <span
                       className={`text-xs px-2 py-0.5 rounded ${user.status === "ACTIVE"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                         }`}
                     >
                       {user.status}
@@ -178,14 +212,14 @@ export default function AdminDashboard() {
                   </div>
                   <span
                     className={`text-xs font-medium px-2 py-1 rounded-full ${{
-                        REQUESTED: "bg-yellow-100 text-yellow-800",
-                        ACCEPTED: "bg-blue-100 text-blue-800",
-                        DECLINED: "bg-red-100 text-red-800",
-                        PAID: "bg-purple-100 text-purple-800",
-                        IN_PROGRESS: "bg-green-100 text-green-800",
-                        COMPLETED: "bg-gray-100 text-gray-800",
-                        CANCELLED: "bg-red-200 text-red-900",
-                      }[booking.status] || "bg-gray-100 text-gray-800"
+                      REQUESTED: "bg-yellow-100 text-yellow-800",
+                      ACCEPTED: "bg-blue-100 text-blue-800",
+                      DECLINED: "bg-red-100 text-red-800",
+                      PAID: "bg-purple-100 text-purple-800",
+                      IN_PROGRESS: "bg-green-100 text-green-800",
+                      COMPLETED: "bg-gray-100 text-gray-800",
+                      CANCELLED: "bg-red-200 text-red-900",
+                    }[booking.status] || "bg-gray-100 text-gray-800"
                       }`}
                   >
                     {booking.status}
@@ -194,6 +228,82 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+      {/* Categories Tab */}
+      {activeTab === "categories" && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-500">
+              {categories.length} categories total
+            </p>
+            <Button
+              size="sm"
+              onClick={() => setShowCategoryForm(!showCategoryForm)}
+            >
+              {showCategoryForm ? "Cancel" : "+ Add Category"}
+            </Button>
+          </div>
+
+          {/* Create Form */}
+          {showCategoryForm && (
+            <Card>
+              <CardContent className="pt-4 space-y-3">
+                <input
+                  type="text"
+                  placeholder="Category name (e.g. Plumbing)"
+                  value={categoryForm.name}
+                  onChange={(e) =>
+                    setCategoryForm({ ...categoryForm, name: e.target.value })
+                  }
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+                <input
+                  type="text"
+                  placeholder="Description (optional)"
+                  value={categoryForm.description}
+                  onChange={(e) =>
+                    setCategoryForm({
+                      ...categoryForm,
+                      description: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+                <Button
+                  className="w-full"
+                  onClick={createCategory}
+                  disabled={isCreatingCategory}
+                >
+                  {isCreatingCategory ? "Creating..." : "Create Category"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Categories List */}
+          {categories.length === 0 ? (
+            <Card>
+              <CardContent className="py-6 text-center text-gray-500 text-sm">
+                No categories yet.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {categories.map((cat) => (
+                <Card key={cat.id}>
+                  <CardContent className="py-4">
+                    <p className="font-medium">{cat.name}</p>
+                    {cat.description && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        {cat.description}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
