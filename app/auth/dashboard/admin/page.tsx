@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { apiClient, getErrorMessage } from "@/lib/api-client";
 import { getCurrentUser } from "@/lib/auth";
 import { logout } from "@/lib/auth";
