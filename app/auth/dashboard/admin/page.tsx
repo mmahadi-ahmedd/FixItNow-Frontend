@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { apiClient, getErrorMessage } from "@/lib/api-client";
 import { getCurrentUser } from "@/lib/auth";
-import { logout } from "@/lib/auth";
 
 interface User {
   id: number;
