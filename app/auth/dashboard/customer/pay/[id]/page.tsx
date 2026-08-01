@@ -13,24 +13,35 @@ export default function PayPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePay = async () => {
-  setIsLoading(true);
-  try {
-    await apiClient.post("/payments/create", {
-      bookingId: Number(id),
-    });
+    setIsLoading(true);
+    try {
 
-    await apiClient.post("/payments/test-confirm", {
-      bookingId: Number(id),
-    });
+      const res = await apiClient.post("/payments/checkout", {
+        bookingId: Number(id),
+      });
 
-    toast.success("Payment successful! Booking is now PAID.");
-    router.push("/auth/dashboard/customer");
-  } catch (error) {
-    toast.error(getErrorMessage(error));
-  } finally {
-    setIsLoading(false);
-  }
-};
+      console.log("checkout response:", res.data);
+      const { url } = res.data.data;
+      console.log("redirecting to:", url);
+      window.location.href = url;
+
+      if (!url) {
+        toast.error("Could not create payment session. Please try again.");
+        return;
+      }
+
+      // await apiClient.post("/payments/test-confirm", {
+      //   bookingId: Number(id),
+      // });
+
+      toast.success("Payment successful! Booking is now PAID.");
+      router.push("/auth/dashboard/customer");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
@@ -38,20 +49,25 @@ export default function PayPage() {
         <CardHeader className="text-center">
           <CardTitle>Complete Payment</CardTitle>
           <CardDescription>
-            Your booking has been accepted. Complete payment to confirm your job.
+            You will be redirected to Stripes secure payment page.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
+            <p className="font-medium mb-1">Test Card Details:</p>
+            <p>Card: 4242 4242 4242 4242</p>
+            <p>Expiry: Any future date (e.g. 12/30)</p>
+            <p>CVC: Any 3 digits (e.g. 123)</p>
+          </div>
+
           <p className="text-sm text-gray-500 text-center">
             Booking ID: <strong>#{id}</strong>
           </p>
-          <Button
-            className="w-full"
-            onClick={handlePay}
-            disabled={isLoading}
-          >
-            {isLoading ? "Processing..." : "Pay with Stripe"}
+
+          <Button className="w-full" onClick={handlePay} disabled={isLoading}>
+            {isLoading ? "Redirecting to Stripe..." : "Pay with Stripe"}
           </Button>
+
           <Button
             variant="outline"
             className="w-full"

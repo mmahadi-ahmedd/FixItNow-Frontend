@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { apiClient, getErrorMessage } from "@/lib/api-client";
 import { getCurrentUser } from "@/lib/auth";
-import { logout } from "@/lib/auth";
-
 
 interface Booking {
   id: number;
@@ -34,12 +34,11 @@ const statusColors: Record<string, string> = {
 
 export default function CustomerDashboard() {
   const router = useRouter();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
+    const checkAuth = async () => {
       const user = await getCurrentUser();
       if (!user) {
         router.push("/auth/login");
@@ -50,37 +49,42 @@ export default function CustomerDashboard() {
         return;
       }
       setUserName(user.name);
-
-      try {
-        const res = await apiClient.get("/bookings");
-        setBookings(res.data.data);
-      } catch (error) {
-        toast.error(getErrorMessage(error));
-      } finally {
-        setIsLoading(false);
-      }
+      setAuthChecked(true);
     };
-    loadData();
+    checkAuth();
   }, [router]);
+
+  const {
+    data: bookings = [],
+    isLoading,
+    refetch,
+  } = useQuery<Booking[]>({
+    queryKey: ["customer-bookings"],
+    queryFn: async () => {
+      const res = await apiClient.get("/bookings");
+      return res.data.data;
+    },
+    enabled: authChecked, 
+  });
 
   const cancelBooking = async (bookingId: number) => {
     try {
       await apiClient.patch(`/bookings/${bookingId}/cancel`);
       toast.success("Booking cancelled successfully");
-      setBookings((prev) =>
-        prev.map((b) =>
-          b.id === bookingId ? { ...b, status: "CANCELLED" } : b
-        )
-      );
+      refetch(); 
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
   };
 
-  if (isLoading) {
+  if (!authChecked || isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Loading your dashboard...</p>
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-40 w-full" />
       </div>
     );
   }
@@ -176,14 +180,14 @@ export default function CustomerDashboard() {
                   {!["IN_PROGRESS", "COMPLETED", "CANCELLED", "DECLINED"].includes(
                     booking.status
                   ) && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => cancelBooking(booking.id)}
-                      >
-                        Cancel
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => cancelBooking(booking.id)}
+                    >
+                      Cancel
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
