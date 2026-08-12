@@ -23,13 +23,13 @@ interface Booking {
 }
 
 const statusColors: Record<string, string> = {
-  REQUESTED: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  ACCEPTED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  DECLINED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  PAID: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  IN_PROGRESS: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  COMPLETED: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
-  CANCELLED: "bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300",
+  REQUESTED: "bg-yellow-100 text-yellow-800",
+  ACCEPTED: "bg-blue-100 text-blue-800",
+  DECLINED: "bg-red-100 text-red-800",
+  PAID: "bg-purple-100 text-purple-800",
+  IN_PROGRESS: "bg-green-100 text-green-800",
+  COMPLETED: "bg-gray-100 text-gray-800",
+  CANCELLED: "bg-red-200 text-red-900",
 };
 
 export default function CustomerDashboard() {
@@ -92,9 +92,13 @@ export default function CustomerDashboard() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold">Welcome, {userName}</h1>
+          <p className="text-gray-500">Manage your bookings and payments</p>
+        </div>
       </div>
 
-      <h2 className="text-xl font-semibold mb-4">Technicians Worked for Me</h2>
+      <h2 className="text-xl font-semibold mb-4">Your Bookings</h2>
 
       {bookings.length === 0 ? (
         <Card>
@@ -115,7 +119,7 @@ export default function CustomerDashboard() {
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-base">
-                    {booking.technician.user.name}
+                    {booking.service.title}
                   </CardTitle>
                   <span
                     className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[booking.status]}`}
@@ -125,6 +129,7 @@ export default function CustomerDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-gray-600">
+                <p>Technician: {booking.technician.user.name}</p>
                 <p>Address: {booking.address}</p>
                 <p>
                   Scheduled:{" "}

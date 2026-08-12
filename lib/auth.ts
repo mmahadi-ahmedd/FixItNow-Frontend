@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/api-client";
 
-export interface CurrentUser {
+export interface CurrentUser {  
   id: number;
   name: string;
   email: string;

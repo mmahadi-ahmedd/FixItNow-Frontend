@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import Providers from "./providers";
 import Navbar from "@/components/Navbar";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -23,11 +24,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${roboto.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">
-        <Providers>
-          <Navbar />
-          {children}
-        </Providers>
+      <body className="min-h-full flex flex-col font-sans pt-16">
+        <ThemeProvider>
+          <Providers>
+            <Navbar />
+            {children}
+          </Providers>
+        </ThemeProvider>
         <Toaster />
       </body>
     </html>
